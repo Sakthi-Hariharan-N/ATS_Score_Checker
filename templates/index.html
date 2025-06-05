@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ATS Resume Checker</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
+        .tabs { display: flex; justify-content: center; margin-top: 40px; }
+        .tab-btn {
+            background: #fff;
+            border: 1px solid #007bff;
+            color: #007bff;
+            padding: 14px 32px;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 8px 8px 0 0;
+            margin: 0 2px;
+            outline: none;
+            transition: background 0.2s, color 0.2s;
+        }
+        .tab-btn.active {
+            background: #007bff;
+            color: #fff;
+            border-bottom: 2px solid #fff;
+        }
+        .tab-content {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto 40px auto;
+            background: #fff;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 8px #ccc;
+            padding: 32px;
+        }
+        .tab-content.active { display: block; }
+        .form-section { display: flex; gap: 32px; }
+        .column { flex: 1; }
+        textarea { width: 100%; height: 220px; padding: 8px; font-size: 16px; border-radius: 4px; border: 1px solid #bbb; }
+        input[type="file"] { margin-top: 16px; }
+        button[type="submit"] {
+            background: #007bff; color: #fff; border: none; border-radius: 4px;
+            padding: 12px 24px; font-size: 16px; cursor: pointer; margin-top: 20px;
+        }
+        button[type="submit"]:hover { background: #0056b3; }
+        h1 { text-align: center; margin-top: 32px; }
+        .results { margin-top: 32px; }
+        .result-section { margin-bottom: 24px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        /* Overlay styles */
+        #analyzing-overlay {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255,255,255,0.8);
+            color: #007bff;
+            font-size: 2rem;
+            text-align: center;
+            padding-top: 30vh;
+            letter-spacing: 2px;
+        }
+        #analyzing-overlay span {
+            animation: blink 1s linear infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+    </style>
+    <script>
+        function showTab(tabId) {
+            var tabs = document.getElementsByClassName('tab-content');
+            var btns = document.getElementsByClassName('tab-btn');
+            for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById(tabId + '-btn').classList.add('active');
+        }
+        window.onload = function() {
+            showTab('ats');
+        }
+        // Show overlay on form submit
+        function showAnalyzing() {
+            document.getElementById('analyzing-overlay').style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <div id="analyzing-overlay"><span>Analyzing...</span></div>
+    <h1>ATS Resume & Quality Checker</h1>
+    <div class="tabs">
+        <button class="tab-btn" id="ats-btn" onclick="showTab('ats')">ATS Resume Checker</button>
+        <button class="tab-btn" id="basic-btn" onclick="showTab('basic')">Basic Resume Quality Check</button>
+    </div>
+	
+    <!-- ATS Resume Checker Tab -->
+    <div id="ats" class="tab-content">
+        <form method="POST" enctype="multipart/form-data" action="/" onsubmit="showAnalyzing()">
+            <div class="form-section">
+                <div class="column">
+                    <h3>Job Description</h3>
+                    <textarea name="job_description" required placeholder="Paste the job description here..."></textarea>
+                </div>
+                <div class="column">
+                    <h3>Upload Resume</h3>
+                    <input type="file" name="resume" accept=".pdf,.docx" required>
+                </div>
+            </div>
+            <div style="text-align:center;">
+                <button type="submit">Analyze</button>
+            </div>
+        </form>
+        {% if structure or result %}
+        <div class="results">
+            {% if structure %}
+            <div class="result-section">
+                <h2>Resume Structure Analysis</h2>
+                <p><strong>Missing Sections:</strong> {{ structure.missing_sections }}</p>
+                <p><strong>Formatting Issues:</strong> {{ structure.formatting_issues }}</p>
+            </div>
+            {% endif %}
+            {% if result %}
+            <div class="result-section">
+                <h2>JD Matching</h2>
+                <p><strong>Match Score:</strong> {{ result.match_score }}%</p>
+                <p><strong>Common Keywords:</strong> {{ result.common_keywords }}</p>
+                <p><strong>Missing Keywords:</strong> {{ result.missing_keywords }}</p>
+                {% if result.bonus_applied %}
+                    <p><strong>Bonus for keywords:</strong> {{ result.bonus_applied }}</p>
+                {% endif %}
+                {% if result.extra_applied %}
+                    <p><strong>Extra bonus for:</strong> {{ result.extra_applied }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Basic Resume Quality Check Tab -->
+    <div id="basic" class="tab-content">
+        <form method="POST" enctype="multipart/form-data" action="/basic" onsubmit="showAnalyzing()">
+            <div class="form-section">
+                <div class="column" style="width:100%;">
+                    <h3>Upload Resume (PDF or DOCX)</h3>
+                    <input type="file" name="resume" accept=".pdf,.docx" required>
+                </div>
+            </div>
+            <div style="text-align:center;">
+                <button type="submit">Check Basic Resume Score</button>
+            </div>
+        </form>
+        {% if basic_report %}
+        <div class="results">
+            <div class="result-section">
+                <h2>Basic Resume Quality Check</h2>
+                <ul>
+                    <li><strong>Total Resume Score:</strong> {{ basic_report.total_score }}%</li>
+                    <li>Spelling Score: {{ basic_report.spelling_score }}%</li>
+                    <li>Email Present: {{ 'Yes' if basic_report.has_email else 'No' }}</li>
+                    <li>Gmail Present: {{ 'Yes' if basic_report.has_gmail else 'No' }}</li>
+                    <li>Phone Number Present: {{ 'Yes' if basic_report.has_phone else 'No' }}</li>
+                    <li>Blog/Portfolio URL Present: {{ 'Yes' if basic_report.has_blog else 'No' }}</li>
+                    <li>Summary Section: {{ 'Yes' if basic_report.has_summary else 'No' }}</li>
+                    <li>Project Section: {{ 'Yes' if basic_report.has_project else 'No' }}</li>
+                    <li>Certification Section: {{ 'Yes' if basic_report.has_certification else 'No' }}</li>
+                    <li>All Bullet Points: {{ 'Yes' if basic_report.all_bullet_points else 'No' }}</li>
+                    {% if basic_report.suggestions %}
+                        <li><strong>Suggestions:</strong> {{ basic_report.suggestions|join(', ') }}</li>
+                    {% endif %}
+                </ul>
+				
+				<h3>Semantic Matches (Similar Words):</h3>
+					<ul>
+					{% for jd, resume, score in result.semantic_applied %}
+						<li>JD: <b>{{ jd }}</b> &harr; Resume: <b>{{ resume }}</b> (Similarity: {{ score }})</li>
+					{% endfor %}
+					</ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+	
+	{% if result.semantic_applied %}
+    
+{% endif %}
+	
+	
+	
+</script>
+</body>
+
+</html>
