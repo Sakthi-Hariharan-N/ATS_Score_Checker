@@ -37,14 +37,22 @@ Visit http://localhost:5000 in your browser.
 Project Structure
 text
 ├── app.py
+
 ├── requirements.txt
+
 ├── templates/
 │   └── index.html
+
 ├── resume_parser.py
+
 ├── jd_analyzer.py
+
 ├── similarity_checker.py
+
 ├── semantic_matcher.py
+
 ├── basic_quality.py
+
 How It Works
 ATS Resume Checker Tab:
 Paste a job description and upload your resume. The app extracts keywords, checks for overlaps, and uses semantic similarity to find related skills for a comprehensive match score.
@@ -56,9 +64,13 @@ Technologies Used
 Flask
 
 python-docx
+
 pdfplumber
+
 TextBlob
+
 SentenceTransformers
+
 PyTorch
 
 
